@@ -7,19 +7,30 @@ processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
 model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
 vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
 
-text = "Hello everyone. My name is Matthew Mercer, voice actor and Dungeon Master for Critical Role and welcome to the first episode of the new series, Critical Role: The Legend of Vox Machina."
-inputs = processor(text=text, return_tensors="pt")
-
 # load xvector containing speaker's voice characteristics from a dataset
 embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
-speaker_embeddings = torch.tensor(embeddings_dataset[7305]["xvector"]).unsqueeze(0)
-# speaker_embeddings = torch.tensor(embeddings_dataset[5000]["xvector"]).unsqueeze(0)
 
-speech = model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
+class Voice:
 
-sd.play(speech.numpy(), samplerate=16000, blocking=True)
+    def __init__(self):
 
-# sf.write("speech.wav", speech.numpy(), samplerate=16000)
-# #sph = AudioSegment.from_wav("speech.wav")
-# sph = speech
-# play(sph)
+        self.speaker_embeddings = torch.tensor(embeddings_dataset[5000]["xvector"]).unsqueeze(0)
+
+    def speak(self, text):
+
+        # split text into sentences
+        sentences = text.split(".")
+
+        # process text
+        for sent in sentences:
+            
+            inputs = processor(text=sent, return_tensors="pt")
+            speech = model.generate_speech(inputs["input_ids"], self.speaker_embeddings, vocoder=vocoder)
+            sd.play(speech.numpy(), samplerate=16000, blocking=True)
+
+
+if __name__ == "__main__":
+
+    voice = Voice()
+    voice.speak("Hello everyone. My name is Matthew Mercer, voice actor and Dungeon Master for Critical Role and welcome to the first episode of the new series, Critical Role: The Legend of Vox Machina.")
+

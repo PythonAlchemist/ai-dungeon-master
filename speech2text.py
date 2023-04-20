@@ -11,7 +11,6 @@ MODEL_ID = "jonatasgrosman/wav2vec2-large-xlsr-53-english"
 SAMPLES = 10
 
 Live = False
-
 if Live:
     # Record Live Audio
 
