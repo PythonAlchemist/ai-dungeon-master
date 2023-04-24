@@ -6,14 +6,21 @@ from stream import TextStream, VoiceObserver
 from prompts.system import jailbreak
 from prompts.dungeon_master import dm_init
 from prompts.players import player_prompt
+import streamlit as st
+from streamlit_chat import message
 
 load_dotenv(find_dotenv())
+
+VOICE = False
 
 # Create a TextStream instance
 text_stream = TextStream()
 
+# Create a Voice instance
+voice = Voice(mute=True)
+
 # Register the VoiceObserver with the TextStream instance
-voice_observer = VoiceObserver(Voice())
+voice_observer = VoiceObserver(voice)
 text_stream.register_observer(voice_observer)
 
 # Load your OpenAI API key from an environment variable or secret management service
@@ -33,7 +40,7 @@ def generate_response(messages):
     return message
 
 
-def main():
+def bot_conditioning():
     conversation_history = []
 
     # Jailbreak layer
@@ -53,22 +60,59 @@ def main():
 
     conversation_history.append({"role": "system", "content": player_prompt})
 
-    while True:
-        try:
-            user_input = input("User: ")
-            conversation_history.append({"role": "user", "content": user_input})
+    return conversation_history
 
-            chatbot_response = generate_response(conversation_history)
-            conversation_history.append(
-                {"role": "assistant", "content": chatbot_response}
-            )
 
-            print(f"ChatGPT: {chatbot_response}")
-            text_stream.append(chatbot_response)
+def send_message(selected_user, message, conversation_history=[]):
+    user_input = f"[{selected_user}] {message}"
+    conversation_history.append({"role": "user", "content": user_input})
 
-        except KeyboardInterrupt:
-            print("\nEnding the conversation.")
-            break
+    chatbot_response = generate_response(conversation_history)
+    conversation_history.append({"role": "assistant", "content": chatbot_response})
+
+    text_stream.append(chatbot_response)
+
+    return chatbot_response
+
+
+def main():
+    st.title("Chat Interface")
+
+    user_options = {"Chris": 1, "Adam": 2, "Peter": 3}
+    user_colors = {0: "#FFFFFF", 1: "#FF5733", 2: "#33FFBD", 3: "#9A33FF"}
+    conversation_history = bot_conditioning()
+
+    selected_user = st.sidebar.selectbox(
+        "Choose a user", options=list(user_options.keys())
+    )
+
+    user_id = user_options[selected_user]
+    chat_log = []
+
+    chat_history = st.empty()
+    message_input = st.text_input("Type your message:")
+
+    # parse DM response from conversation_history
+    for message in conversation_history:
+        if message["role"] == "assistant":
+            chat_log.append(("DM", message["content"], user_colors[0]))
+
+    if st.button("Send"):
+        response = send_message(selected_user, message_input, conversation_history)
+
+        chat_log.append((selected_user, message_input, user_colors[user_id]))
+        chat_log.append(("DM", response, user_colors[0]))
+
+        # Display the entire chat history
+        with chat_history:
+            st.markdown("---")
+            for user, message, color in chat_log:
+                st.markdown(
+                    f'<p style="color:{color};"><b>{user}:</b> {message}</p>',
+                    unsafe_allow_html=True,
+                )
+
+        message_input = ""
 
 
 if __name__ == "__main__":

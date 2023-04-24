@@ -14,10 +14,14 @@ class TextStream:
         self.data.append(text)
         self.notify_observers()
 
+        # print formatted text
+        print(f"Streams: {text}")
+
 
 class StreamObserver:
     def update(self, stream):
         raise NotImplementedError
+
 
 class VoiceObserver(StreamObserver):
     def __init__(self, voice):
@@ -25,4 +29,5 @@ class VoiceObserver(StreamObserver):
 
     def update(self, stream):
         text = stream.data[-1]  # Get the latest appended text
-        self.voice.speak(text)
+        if not self.voice.mute:
+            self.voice.speak(text)
