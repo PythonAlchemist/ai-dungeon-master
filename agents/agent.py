@@ -6,22 +6,13 @@ import networkx as nx
 class Agent:
 
     """
-    A class to represent an individual agent in a simulation similar to The Sims.
+    A class to represent an individual agent in a simulation.
 
     Attributes:
     -----------
-    name : str
-        The name of the agent.
-    description : str
-        A brief description of the agent.
-    location : str
-        The current location of the agent in the simulated environment.
-    memories : list
-        A list of memories the agent has about their interactions.
-    compressed_memories : list
-        A list of compressed memories that summarize the agent's experiences.
-    plans : str
-        The agent's daily plans, generated at the beginning of each day.
+    memories : list - A list of memories the agent has about their interactions.
+    compressed_memories : list - A list of compressed memories that summarize the agent's experiences.
+    plans : str - The agent's daily plans, generated at the beginning of each day.
 
     Methods:
     --------

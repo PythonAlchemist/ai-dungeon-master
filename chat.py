@@ -1,8 +1,8 @@
 import openai
 import os
 from dotenv import load_dotenv, find_dotenv
-from text2speech import Voice
-from stream import TextStream, VoiceObserver
+from utils.text2speech import Voice
+from utils.stream import TextStream, VoiceObserver
 from prompts.system import jailbreak
 from prompts.dungeon_master import dm_init
 from prompts.players import player_prompt

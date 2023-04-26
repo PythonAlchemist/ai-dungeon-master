@@ -1,0 +1,29 @@
+npcs:
+  Barthan:
+    name: Barthan
+    race: human
+    sex: male
+    age: 45
+    occupation: Innkeeper at the Golden Lion
+    description: short porty fellow with a bald head and a big smile
+    personality: friendly, talkative, and a bit of a gossip
+    friendliness: 8
+
+locations:
+  Golden Lion:
+    name: Golden Lion
+    type: inn
+    description: a large inn with a common room and several private rooms
+    owner: Barthan
+    occupants:
+    - Barthan
+
+players:
+  Minsc:
+    name: Minsc
+    race: human
+    sex: male
+    age: 25
+    description: tall, muscular, and handsome
+    location: Golden Lion
+    CHARISMA: 18

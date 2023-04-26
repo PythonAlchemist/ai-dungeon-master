@@ -23,17 +23,27 @@ def generate(prompt, use_openai=True):
     - str: The generated text completion.
     """
     if use_openai:
-        model_engine = "text-davinci-002"
-        response = openai.Completion.create(
-            engine=model_engine,
-            prompt=prompt,
-            max_tokens=1024,
+        # model_engine = "text-davinci-002"
+        # response = openai.ChatCompletion.create(
+        #     engine=model_engine,
+        #     prompt=prompt,
+        #     max_tokens=1024,
+        #     n=1,
+        #     stop=None,
+        #     temperature=0.5,
+        # )
+        # message = response.choices[0].text
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150,
             n=1,
             stop=None,
-            temperature=0.5,
+            temperature=0.8,
         )
+        message = response.choices[0].message["content"]
 
-        message = response.choices[0].text
         return message.strip()
 
     else:
