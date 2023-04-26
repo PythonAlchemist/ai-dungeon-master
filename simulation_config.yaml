@@ -4,6 +4,7 @@ npcs:
     race: human
     sex: male
     age: 45
+    location: Golden Lion
     occupation: Innkeeper at the Golden Lion
     description: short porty fellow with a bald head and a big smile
     personality: friendly, talkative, and a bit of a gossip
@@ -15,8 +16,6 @@ locations:
     type: inn
     description: a large inn with a common room and several private rooms
     owner: Barthan
-    occupants:
-    - Barthan
 
 players:
   Minsc:

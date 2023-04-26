@@ -50,31 +50,37 @@ class Player:
         if action == "look":
             self.look(locations)
         elif action == "talk":
-            self.talk(npcs, locations)
+            self.talk(npcs)
         elif action == "ask":
             self.ask()
         else:
             print("Invalid action.")
 
-    def ask(self):
+    def ask(self, conversation_history=[]):
         """
         Ask an open ended question.
         """
-        print("What would you like to ask?")
-        question = input(">")
+        while True:
+            question = input("ask>")
 
-        prompt = f"""
-        Task: A Player in a role playing game is asking to ask an open ended question.
-        Respond as a narrator in a story would give the player question and context provided.
-        
-        Player: {question}
-        Location: {self.location}
-        Location Description: {self.location.describe()}
-        """
+            prompt = f"""
+            Task: A Player in a role playing game is asking to ask an open ended question.
+            Respond as a Dungeon Master in a story would given the player question and context provided.
+            
+            Player: {question}
+            Location: {self.location}
+            Location Description: {self.location.describe()}
+            conversation_history: {conversation_history}
+            """
 
-        text = generate(prompt)
-        print(text)
-        return text
+            text = generate(prompt)
+            print(text)
+
+            conversation_history.append(question)
+            conversation_history.append(text)
+
+            if question == "quit":
+                break
 
     def look(self, locations):
         """
@@ -84,15 +90,26 @@ class Player:
             if location.name == self.location:
                 print(location.description)
 
-    def talk(self, npcs, locations):
+    def talk(self, npcs):
         """
         Prompts the player to choose a character to talk to.
         """
+        conversation_history = []
+
         print("Who would you like to talk to?")
-        for npc in npcs:
+        for key in npcs:
+            npc = npcs[key]
             if npc.location == self.location:
                 print(npc.name)
-        character = input(">")
-        for npc in npcs:
-            if npc.name == character:
-                npc.respond(npcs, locations)
+        character = input("Enter Name >").strip()
+        npc_selected = npcs[character]
+        while True:
+            dialogue = input("chat>").strip()
+            if dialogue == "quit":
+                npc_selected.updateMemory(self, conversation_history)
+                break
+            response = npc_selected.chat(dialogue, self, conversation_history)
+            print(response)
+
+            conversation_history.append(dialogue)
+            conversation_history.append(response)

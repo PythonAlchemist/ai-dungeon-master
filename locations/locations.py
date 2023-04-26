@@ -2,9 +2,17 @@ class Location:
     """
     A class to represent a location in the simulated environment.
 
+    Attributes:
+    -----------
+    name : str - The name of the location.
+    type : str - The type of location.
+    description : str - The description of the location.
+    owner : str - The owner of the location.
+    occupants : list - A list of the location's occupants.
+
     """
 
-    def __init__(self, name, type, description, owner, occupants):
+    def __init__(self, name, type, description, owner, occupants=[]):
         self.name = name
         self.type = type
         self.description = description

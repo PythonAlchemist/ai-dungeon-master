@@ -7,11 +7,20 @@ import yaml
 with open("simulation_config.yaml", "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
+# create a list of Location objects from the config file
+locations = dict()
+for key in config["locations"]:
+    location = config["locations"][key]
+    locations[location["name"]] = Location(**location)
+
 # create a list of NPC objects from the config file
 npcs = dict()
 for key in config["npcs"]:
     npc = config["npcs"][key]
     npcs[npc["name"]] = NPC(**npc)
+
+    # set the NPC's location
+    npcs[npc["name"]].location = locations[npc["location"]]
 
 
 # create a list of Player objects from the config file
@@ -20,11 +29,6 @@ for key in config["players"]:
     player = config["players"][key]
     players[player["name"]] = Player(**player)
 
-# create a list of Location objects from the config file
-locations = dict()
-for key in config["locations"]:
-    location = config["locations"][key]
-    locations[location["name"]] = Location(**location)
 
 ####### SIMULATION LOOP #######
 
@@ -38,4 +42,4 @@ player.location = locations["Golden Lion"]
 # reveal player's location details
 while True:
     action = player.chooseAction()
-    player.executeAction(action, None, None)
+    player.executeAction(action, npcs, None)
