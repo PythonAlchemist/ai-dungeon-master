@@ -1,11 +1,18 @@
+from agents.dm import DM
 from agents.npc import NPC
 from locations.locations import Location
 from players.player import Player
+from termcolor import cprint
 import yaml
+import os
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # read simulation parameters from config file
-with open("simulation_config.yaml", "r") as f:
+with open(f"{BASE_DIR}/quests/golden_lion_tavern.yaml", "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
+
 
 # create a list of Location objects from the config file
 locations = dict()
@@ -30,6 +37,12 @@ for key in config["players"]:
     players[player["name"]] = Player(**player)
 
 
+# quest description
+quest = config["quest"]
+
+# create a DM object
+dm = DM(quest=quest, locations=locations, npcs=npcs, players=players)
+
 ####### SIMULATION LOOP #######
 
 # example in the form of a conversation between a player and an NPC in the same location
@@ -40,6 +53,10 @@ player = players["Minsc"]
 player.location = locations["Golden Lion"]
 
 # reveal player's location details
+# while True:
+#     action = player.chooseAction()
+#     player.executeAction(action, npcs, None)
+
 while True:
-    action = player.chooseAction()
-    player.executeAction(action, npcs, None)
+    text = input(">")
+    resp = dm.rolePlay(player, text)

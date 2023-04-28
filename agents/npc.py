@@ -2,6 +2,7 @@ from utils.text_generation import generate
 from collections import defaultdict
 import os
 import json
+from termcolor import cprint
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -59,43 +60,50 @@ class NPC:
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
 
-    def chat(self, dialogue, player, conversation_history=[]) -> str:
+    def chat(self, player, extra_info=None, initial_dialog=None) -> None:
         """Generates a chat session between the agent and the player."""
 
-        prompt = f"""
-        Task: You are roleplaying as {self.name} and you are currently in {self.location} talking to {player.name}.
-        
-        Your Personality:
-        You are a {self.occupation}.
-        You are currently in {self.location}.
-        You are {self.race}, {self.sex}, {self.age} describes as {self.description}.
-        You are {self.alignment}.
-        You are {self.friendliness} friendly.
-        You know the following about people: {self.memory}.
+        conversation_history = []
 
-        Conversation History:
-        {conversation_history}
+        if initial_dialog:
+            cprint(initial_dialog, "yellow")
+            conversation_history.append(initial_dialog)
 
-        New Dialogue:
-        {dialogue}
+        while True:
+            dialogue = input(f"[chat:({self.name})]>")
+            if dialogue == "exit":
+                break
 
-        What is your response? Remember to stay in character and only respond with new conversation. 
-        If you generate new places or people in your response, that are not explicitly mentioned in your memory 
-        or the conversation history, mark them as new like so: [PLACE] General Store [/PLACE] or [PERSON] Old Man Jenkins [/PERSON].
-        """
+            prompt = f"""
+            Task: You are roleplaying as {self.name} and you are currently in {self.location} talking to {player.name} 
+            within a Dungeons and Dragons game. The Dungeon Master has provided you with the following information about 
+            to help guide your roleplay:
+            {extra_info}
 
-        response = generate(prompt)
+            Your Personality:
+            You are a {self.occupation}.
+            You are currently in {self.location}.
+            You are {self.race}, {self.sex}, {self.age} describes as {self.description}.
+            You are {self.alignment}.
+            You are {self.friendliness} friendly.
+            You know the following about people: {self.memory}.
 
-        # TODO: Create new agents on the fly
-        # check for new places or people
-        # if "[PLACE]" in response:
-        #     new_place = response.split("[PLACE]")[1].split("[/PLACE]")[0]
-        #     self.memory.append(new_place)
-        # if "[PERSON]" in response:
-        #     new_person = response.split("[PERSON]")[1].split("[/PERSON]")[0]
-        #     self.memory.append(new_person)
+            Conversation History:
+            {conversation_history}
 
-        return response
+            New Dialogue:
+            {dialogue}
+            """
+
+            response = generate(prompt)
+            cprint(f"{self.name}:{response}", "yellow")
+
+            conversation_history.append(dialogue)
+            conversation_history.append(response)
+
+        rate, summary = self.updateMemory(player, conversation_history)
+
+        return rate, summary
 
     def updateMemory(self, player, conversation) -> None:
         """Updates the agent's memory with the player's name and the conversation history."""
@@ -121,6 +129,8 @@ class NPC:
 
         # commit to long term memory
         self._writeLongTermMemory()
+
+        return rate, summary
 
     def _writeLongTermMemory(self):
         """Writes the agent's long term memory to a file."""

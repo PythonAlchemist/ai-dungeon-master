@@ -1,3 +1,9 @@
+
+quest:
+  intro: The adventure begins outside the doors of the Golden Lion tavern.
+  main_quest: You have heard that Barthan has been having an issue with rats in the cellar.  He has offered a reward to anyone who can get rid of them.
+
+
 npcs:
   Barthan:
     name: Barthan
@@ -8,6 +14,16 @@ npcs:
     occupation: Innkeeper at the Golden Lion
     description: short porty fellow with a bald head and a big smile
     personality: friendly, talkative, and a bit of a gossip
+    friendliness: 5
+  Lexi:
+    name: Lexi
+    race: human
+    sex: female
+    age: 23
+    location: Golden Lion
+    occupation: Beermaid at the Golden Lion
+    description: young, pretty, brunette with a big smile
+    personality: sweet, kind, and a bit of a flirt
     friendliness: 8
 
 locations:
