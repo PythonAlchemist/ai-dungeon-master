@@ -47,9 +47,9 @@ class Player:
         if action == "look":
             resp = self.look(location)
         elif action == "chat":
-            resp = self.chat(npcs)
+            resp = self.chat(npcs, dm)
         elif action == "ask":
-            resp = self.ask()
+            resp = self.ask(dm)
         elif action == "yield":
             resp = self.yieldAction(dm)
         else:
@@ -57,30 +57,13 @@ class Player:
 
         return resp
 
-    def ask(self, conversation_history=[]):
+    def ask(self, dm, conversation_history=[]):
         """
         Ask an open ended question.
         """
-        while True:
-            question = input("ask>")
-
-            prompt = f"""
-            Task: A Player in a role playing game is asking to ask an open ended question.
-            Respond as a Dungeon Master in a story would given the player question and context provided.
-            
-            Player: {question}
-            Location: {self.location}
-            Location Description: {self.location.describe()}
-            conversation_history: {conversation_history}
-            """
-
-            text = generate(prompt)
-
-            conversation_history.append(question)
-            conversation_history.append(text)
-
-            if question == "quit":
-                break
+        dialog = input("ask>")
+        resp = dm.rolePlay(self, dialog)
+        return resp
 
     def look(self, locations):
         """
@@ -90,7 +73,7 @@ class Player:
             if location.name == self.location:
                 print(location.description)
 
-    def chat(self, npcs):
+    def chat(self, npcs, dm):
         """
         Prompts the player to choose a character to talk to.
         """
@@ -104,7 +87,7 @@ class Player:
         answers = inquirer.prompt(questions)["chat options"]
         npc_selected = npcs[answers]
 
-        npc_selected.chat(self)
+        npc_selected.chat(self, dm)
 
     def yieldAction(self, dm):
         """

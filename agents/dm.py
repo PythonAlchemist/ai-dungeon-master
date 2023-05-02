@@ -61,7 +61,8 @@ class DM:
         prompt = f"""
         Task: You are playing the role of the Dungeon Master for a Dungeons and Dragons game. This will be short theater of the mind style game and the primary goal is for the players 
         to have fun. You will be playing the role of the Dungeon Master and will be responsible for narrating the story and describing the environment outside of direct dialogue. Try to 
-        model your performance after Matt Mercer, DM for Critical Role. Below I will provide you with context about the primary quest line and the characters you will be interacting with.
+        model your performance after Matt Mercer, DM for Critical Role. Below I will provide you with context about the primary quest line and the characters you will be interacting with. 
+        Your primary task is narration, you should not be creating multi response dialogue between NPCs or Players.
 
         Main Quest Description: {self.quest['main_quest']}
         Quest Intro: {self.quest['intro']}
@@ -79,36 +80,21 @@ class DM:
         - Speak for the players
         - Make decisions for the players
 
-        Things to keep in mind:
-        - Do not leak information to the players that they would not know (NPCs, locations, quest details, etc.) Use the 
-        players memory to keep track of what they know.
-
-        Behavior Alterations:
-        If you are not acting in accordance with your role, the user will respond with feedback like the following:
-        [FEEDBACK] You should not be speaking for the players. Please try again.
-
         Long Term Memory: {self.memory}
 
-        With this information in mind, please start our session, Keep answers short unless you are describing the environment or 
-        being long winded for artistic effect.
+        With this information in mind, Keep answers short unless you are describing the environment or 
+        being long winded for artistic effect. If there is no session history open the session as a 
+        Dungeon Master would. If there is session history, continue the session as a Dungeon Master would.
 
         Session History: {self.session_history}
         """
 
         response = generate(prompt, max_tokens=150)
 
-        # this doesn't work.
-        # TODO: build a classifer to determine if chat needs to be started
-
-        # collect training data for classifier
-        self.training_data.writerow([response, "", "\n"])
-
-        if len(self.session_history) == 0:
-            self.session_history.append(prompt)
-        else:
-            self.session_history.append(f"{player}: {text}")
-
+        self.session_history.append(f"{player}: {text}")
         self.session_history.append(f"DM: {response}")
+
+        cprint(response, "green")
 
         return response
 
@@ -125,3 +111,22 @@ class DM:
         print(response)
 
         self.memory.append(response)
+
+    # TODO: This does not work as expected.
+    def informNPC(self, npc, player, location) -> str:
+        """Informs the NPC of the quest details."""
+
+        prompt = f"""
+        Task: A NPC ({npc.name}) is in a conversation with a player ({player.name}) at {location}. You need to inform the NPC about anything 
+        that is relevant to a quest or plot that {npc.name} would know.
+
+        To help you here is your memory of the simulation so far:
+
+        Long Term Memory: {self.memory}
+        Session History: {self.session_history}
+        """
+
+        response = generate(prompt)
+        cprint(f"VOICE: {response}", "red")
+
+        return response

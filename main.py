@@ -86,6 +86,7 @@ if __name__ == "__main__":
     simulation.active_player = players["Minsc"]
     simulation.active_location = locations["Golden Lion"]
     simulation.active_npc = npcs
+    simulation.active_player.location = simulation.active_location
 
     questions = [
         inquirer.List(
@@ -95,7 +96,9 @@ if __name__ == "__main__":
         )
     ]
 
+    # Start the session
+    resp = simulation.dm.rolePlay(simulation.active_player, "Let's Begin")
+
     while True:
         action = inquirer.prompt(questions)["actions"]
         resp = simulation.active_player.executeAction(simulation, action)
-        print(resp)

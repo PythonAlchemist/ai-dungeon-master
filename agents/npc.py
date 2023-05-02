@@ -60,14 +60,11 @@ class NPC:
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
 
-    def chat(self, player, extra_info=None, initial_dialog=None) -> None:
+    def chat(self, player, dm) -> None:
         """Generates a chat session between the agent and the player."""
 
         conversation_history = []
-
-        if initial_dialog:
-            cprint(initial_dialog, "yellow")
-            conversation_history.append(initial_dialog)
+        dm_assit = dm.informNPC(self, player, self.location)
 
         while True:
             dialogue = input(f"[chat:({self.name})]>")
@@ -76,9 +73,13 @@ class NPC:
 
             prompt = f"""
             Task: You are roleplaying as {self.name} and you are currently in {self.location} talking to {player.name} 
-            within a Dungeons and Dragons game. The Dungeon Master has provided you with the following information about 
-            to help guide your roleplay:
-            {extra_info}
+            within a Dungeons and Dragons game. You will only respond to the player's dialogue and will not speak for
+            {player.name}. Remeber to stay in character as {self.name} and respond as you think {self.name} would.
+
+            Additionally the Dungeon Master has given you the following information that they deem important to your 
+            conversation with {player.name}:
+            {dm_assit}
+
 
             Your Personality:
             You are a {self.occupation}.
@@ -98,14 +99,14 @@ class NPC:
             response = generate(prompt)
             cprint(f"{self.name}:{response}", "yellow")
 
-            conversation_history.append(dialogue)
-            conversation_history.append(response)
+            conversation_history.append(f"{player.name}: {dialogue}")
+            conversation_history.append(f"{self.name}: {response}")
 
-        rate, summary = self.updateMemory(player, conversation_history)
+        rate, summary = self.updateMemory(player, conversation_history, dm)
 
         return rate, summary
 
-    def updateMemory(self, player, conversation) -> None:
+    def updateMemory(self, player, conversation, dm) -> None:
         """Updates the agent's memory with the player's name and the conversation history."""
 
         prompt = f"""
@@ -131,6 +132,9 @@ class NPC:
 
         # commit to long term memory
         self._writeLongTermMemory()
+
+        # update DM memory of the NPC interaction
+        dm.memory.append(summary)
 
         return rate, summary
 
