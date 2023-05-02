@@ -83,14 +83,9 @@ class DM:
         - Do not leak information to the players that they would not know (NPCs, locations, quest details, etc.) Use the 
         players memory to keep track of what they know.
 
-        Tools at your disposal:
-        - Chat Session: If an NPC initiates a chat session with a player you will respond as follows: [CHAT] npc_name: text. For example, [CHAT] goblin: Hello there! 
-        Keep in mind, NEVER initiate a chat session with a player. If you do, the simulation will terminate.
-
         Behavior Alterations:
         If you are not acting in accordance with your role, the user will respond with feedback like the following:
         [FEEDBACK] You should not be speaking for the players. Please try again.
-
 
         Long Term Memory: {self.memory}
 
@@ -107,29 +102,6 @@ class DM:
 
         # collect training data for classifier
         self.training_data.writerow([response, "", "\n"])
-
-        chat = False
-        npc = None
-        extra = None
-        chat_text = None
-
-        # check if the response is a chat session
-        if "[CHAT]" in response:
-            chat = True
-            pre_text = response.split("[CHAT]")[0].strip()
-            npc = response.split("[CHAT]")[1].split(":")[0].strip()
-            chat_text = response.split("[CHAT]")[1].split(":")[1].strip()
-
-        # start a conversation with an NPC
-        if chat:
-            cprint(pre_text, "green")
-            if npc in self.npcs.keys():
-                rate, summary = self.npcs[npc].chat(player, extra, chat_text)
-            else:
-                print(f"{npc} is not a valid NPC.")
-
-        else:
-            cprint(response, "green")
 
         if len(self.session_history) == 0:
             self.session_history.append(prompt)

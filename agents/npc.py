@@ -125,12 +125,25 @@ class NPC:
         print(f"Rate: {rate}")
         print(f"Summary: {summary}")
 
+        # TODO: allow user to add more information to the summary and recalculate
+
         self.memory[player.name].append((rate, summary))
 
         # commit to long term memory
         self._writeLongTermMemory()
 
         return rate, summary
+
+    def _loadLongTermMemory(self) -> None:
+        """Loads the agent's long term memory from a file."""
+
+        try:
+            with open(f"{BASE_DIR}/agents/long_term_memory/{self.name}.json", "r") as f:
+                self.memory = json.load(f)
+        except FileNotFoundError:
+            print(f"{self.name} has no long term memory. Creating one now...")
+            self._writeLongTermMemory()
+            self.memory = defaultdict(list)
 
     def _writeLongTermMemory(self):
         """Writes the agent's long term memory to a file."""

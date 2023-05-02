@@ -1,4 +1,6 @@
 from utils.text_generation import generate
+from termcolor import cprint
+import inquirer
 
 
 class Player:
@@ -28,36 +30,32 @@ class Player:
         self.description = description
         self.location = location
         self.CHARISMA = CHARISMA
-        self.actions = ["look", "talk", "ask"]
+        self.actions = ["look", "chat", "ask", "yield", "move"]
         self.memory = []
 
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
 
-    def chooseAction(self):
-        """
-        Prompts the player to choose an action.
-        """
-        print("What would you like to do?")
-        for action in self.actions:
-            print(action)
-        action = input(">")
-        return action
-
-    def executeAction(self, action, npcs, locations):
+    def executeAction(self, simulation, action):
         """
         Executes the player's action.
         """
+        location = simulation.active_location
+        npcs = simulation.active_npc
+        dm = simulation.dm
+
         if action == "look":
-            self.look(locations)
-        elif action == "talk":
-            self.talk(npcs)
+            resp = self.look(location)
+        elif action == "chat":
+            resp = self.chat(npcs)
         elif action == "ask":
-            self.ask()
+            resp = self.ask()
         elif action == "yield":
-            pass
+            resp = self.yieldAction(dm)
         else:
             print("Invalid action.")
+
+        return resp
 
     def ask(self, conversation_history=[]):
         """
@@ -77,7 +75,6 @@ class Player:
             """
 
             text = generate(prompt)
-            print(text)
 
             conversation_history.append(question)
             conversation_history.append(text)
@@ -93,26 +90,25 @@ class Player:
             if location.name == self.location:
                 print(location.description)
 
-    def talk(self, npcs):
+    def chat(self, npcs):
         """
         Prompts the player to choose a character to talk to.
         """
-        conversation_history = []
+        questions = [
+            inquirer.List(
+                "chat options",
+                message="Who would you like to chat with?",
+                choices=npcs,
+            )
+        ]
+        answers = inquirer.prompt(questions)["chat options"]
+        npc_selected = npcs[answers]
 
-        print("Who would you like to talk to?")
-        for key in npcs:
-            npc = npcs[key]
-            if npc.location == self.location:
-                print(npc.name)
-        character = input("Enter Name >").strip()
-        npc_selected = npcs[character]
-        while True:
-            dialogue = input("chat>").strip()
-            if dialogue == "quit":
-                npc_selected.updateMemory(self, conversation_history)
-                break
-            response = npc_selected.chat(dialogue, self, conversation_history)
-            print(response)
+        npc_selected.chat(self)
 
-            conversation_history.append(dialogue)
-            conversation_history.append(response)
+    def yieldAction(self, dm):
+        """
+        Yields to the DM.
+        """
+        resp = dm.rolePlay(self, "")
+        return resp
