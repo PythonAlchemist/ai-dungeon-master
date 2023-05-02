@@ -29,6 +29,7 @@ class Player:
         self.location = location
         self.CHARISMA = CHARISMA
         self.actions = ["look", "talk", "ask"]
+        self.memory = []
 
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
@@ -53,6 +54,8 @@ class Player:
             self.talk(npcs)
         elif action == "ask":
             self.ask()
+        elif action == "yield":
+            pass
         else:
             print("Invalid action.")
 

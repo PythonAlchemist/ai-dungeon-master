@@ -11,7 +11,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def generate(prompt, use_openai=True):
+def generate(prompt, use_openai=True, max_tokens=250):
     """
     Generates a text completion for a given prompt using either the OpenAI GPT-3 API or the Hugging Face GPT-3 model.
 
@@ -37,10 +37,10 @@ def generate(prompt, use_openai=True):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=150,
+            max_tokens=max_tokens,
             n=1,
             stop=None,
-            temperature=0.8,
+            temperature=0.2,
         )
         message = response.choices[0].message["content"]
 

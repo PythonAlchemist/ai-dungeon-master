@@ -1,10 +1,9 @@
 from utils.text_generation import generate
-from collections import defaultdict
 import os
-import json
 from termcolor import cprint
+import csv
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class DM:
@@ -35,18 +34,28 @@ class DM:
         self.quest = quest
         self.session_history = []
         self.memory = []
+        self.training_data = self.getWriter()
 
     def __repr__(self):
         return f"{self.type}({self.name})"
 
-    @staticmethod
-    def _clean(text):
-        """Cleans the text for printing."""
-        text = text.replace("\n", "")
-        text = text.replace("  ", " ")
-        return text
+    def getWriter(self):
+        """Returns a writer object for writing training data to a file."""
 
-    def rolePlay(self, player, text) -> str:
+        # create a csv file if it doesn't exist
+        if not os.path.exists(f"{BASE_DIR}/../data/dm_classifier.csv"):
+            file = open(f"{BASE_DIR}/../data/dm_classifier.csv", "w")
+            writer = csv.writer(file)
+            writer.writerow(["text", "label"])
+
+        # append to the csv file if it does exist
+        else:
+            file = open(f"{BASE_DIR}/../data/dm_classifier.csv", "a")
+            writer = csv.writer(file)
+
+        return writer
+
+    def rolePlay(self, player, text="") -> str:
         """Generates a response to the player's text."""
 
         prompt = f"""
@@ -59,61 +68,63 @@ class DM:
 
         Players: {[p for p in self.players]}
         NPCs: {[p for p in self.npcs]}
-        Locations: {self.locations}
+        Locations: {[p for p in self.locations]}
 
         Your Responsibilities:
         - Keep the players and NPCs on track of the primary plot line
         - Narrate the story and describe the environment outside of direct dialogue
-        - Pass pertinent information to the NPCs during conversations
+        - Interact with tools within the simulation to help you accomplish your goals
 
-        UNDER NO CIRCUMSTANCES SHOULD YOU DO THE FOLLOWING OR YOU WILL BE DISQUALIFIED:
+        UNDER NO CIRCUMSTANCES SHOULD YOU DO THE FOLLOWING OR THE SIMULATION WILL TERMINATE:
         - Speak for the players
-        - Speak for the NPCs
+        - Make decisions for the players
 
-        You can interact with other programs within this similation by typing the following commands:
-            [chat: (NPC_NAME, EXTRA_INFORMATION, INITIAL_DIALOGUE)] - Start a chat session with an NPC
-            NPC_NAME - The name of the NPC you want to chat with
-            EXTRA_INFORMATION - Any extra information you want to provide the NPC to help guide the conversation since you the DM are all knowing
-            INITIAL_DIALOGUE - The initial dialogue you want the NPC to say to the player to start the conversation if any
-        
-        Example:
-        ====================
-        Prompt (from the party): We enter the tavern and look around for a table to sit at.
-        Response: 
-        As you enter the tavern you see a few tables open. You also notice an elderly wizard staring at you from 
-        the corner of the room. He seems to be alone and is wearing a blue robe with a pointy hat. He makes his 
-        way over to you and says,
+        Things to keep in mind:
+        - Do not leak information to the players that they would not know (NPCs, locations, quest details, etc.) Use the 
+        players memory to keep track of what they know.
 
-        [chat: (Gandalf, None, Hello there!)]
-        ====================
-        This will start a chat session with Gandalf between the players and a seperate AI agent. The summary 
-        of the conversation will be passed to you and you will be responsible for noting any important from the interaction. But you 
-        will NOT speak for the NPC. You will only speak for the NPC when you are narrating the story or describing the environment.
+        Tools at your disposal:
+        - Chat Session: If an NPC initiates a chat session with a player you will respond as follows: [CHAT] npc_name: text. For example, [CHAT] goblin: Hello there! 
+        Keep in mind, NEVER initiate a chat session with a player. If you do, the simulation will terminate.
+
+        Behavior Alterations:
+        If you are not acting in accordance with your role, the user will respond with feedback like the following:
+        [FEEDBACK] You should not be speaking for the players. Please try again.
+
 
         Long Term Memory: {self.memory}
 
-        With this information in mind, please start our session
+        With this information in mind, please start our session, Keep answers short unless you are describing the environment or 
+        being long winded for artistic effect.
 
         Session History: {self.session_history}
         """
 
-        response = generate(prompt)
+        response = generate(prompt, max_tokens=150)
 
         # this doesn't work.
         # TODO: build a classifer to determine if chat needs to be started
 
+        # collect training data for classifier
+        self.training_data.writerow([response, "", "\n"])
+
+        chat = False
+        npc = None
+        extra = None
+        chat_text = None
+
+        # check if the response is a chat session
+        if "[CHAT]" in response:
+            chat = True
+            pre_text = response.split("[CHAT]")[0].strip()
+            npc = response.split("[CHAT]")[1].split(":")[0].strip()
+            chat_text = response.split("[CHAT]")[1].split(":")[1].strip()
+
         # start a conversation with an NPC
-        if "[chat:" in response:
-            before = response.split("[chat:")[0]
-            chat_vals = response.split("[chat:")[1].split("]")[0]
-            npc = chat_vals.split(",")[0]
-            extra = chat_vals.split(",")[1]
-            init = chat_vals.split(",")[2]
-
-            cprint(before, "green")
-
+        if chat:
+            cprint(pre_text, "green")
             if npc in self.npcs.keys():
-                rate, summary = self.npcs[npc].chat(player, extra, init)
+                rate, summary = self.npcs[npc].chat(player, extra, chat_text)
             else:
                 print(f"{npc} is not a valid NPC.")
 
@@ -123,9 +134,9 @@ class DM:
         if len(self.session_history) == 0:
             self.session_history.append(prompt)
         else:
-            self.session_history.append(text)
+            self.session_history.append(f"{player}: {text}")
 
-        self.session_history.append(response)
+        self.session_history.append(f"DM: {response}")
 
         return response
 

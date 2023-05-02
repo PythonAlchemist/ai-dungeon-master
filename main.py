@@ -5,6 +5,7 @@ from players.player import Player
 from termcolor import cprint
 import yaml
 import os
+import inquirer
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,15 +49,21 @@ dm = DM(quest=quest, locations=locations, npcs=npcs, players=players)
 # example in the form of a conversation between a player and an NPC in the same location
 # the player asks the NPC to describe the location
 
+questions = [
+    inquirer.List(
+        "actions",
+        message="What would you like to do?",
+        choices=["look", "talk", "ask", "yield"],
+    )
+]
+
 # choose a player
 player = players["Minsc"]
 player.location = locations["Golden Lion"]
 
-# reveal player's location details
-# while True:
-#     action = player.chooseAction()
-#     player.executeAction(action, npcs, None)
-
 while True:
-    text = input(">")
-    resp = dm.rolePlay(player, text)
+    action = inquirer.prompt(questions)["actions"]
+    if action == "yield":
+        resp = dm.rolePlay(player)
+    else:
+        player.executeAction(action, npcs, None)
