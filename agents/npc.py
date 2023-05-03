@@ -2,6 +2,7 @@ from utils.text_generation import generate
 from collections import defaultdict
 import os
 import json
+from typing import Tuple
 from termcolor import cprint
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,8 +36,8 @@ class NPC:
         sex: str = "male",
         age: int = 30,
         occupation: str = "farmer",
-        description: str = None,
-        location: str = None,
+        description: str = "",
+        location: str = '',
         alignment: str = "neutral good",
         personality: str = "average",
         friendliness: int = 5,
@@ -63,9 +64,7 @@ class NPC:
         """Generates a chat session between the agent and the player."""
 
         conversation_history = []
-        info, init_dialogue = dm.informNPC(self, player, self.location)
-        if init_dialogue:
-            conversation_history.append(f"{player.name}: {init_dialogue}")
+        info = dm.getMemory()
 
         while True:
             dialogue = input(f"[chat:({self.name})]>")
@@ -77,8 +76,10 @@ class NPC:
             within a Dungeons and Dragons game. You will only respond to the player's dialogue and will not speak for
             {player.name}. Remeber to stay in character as {self.name} and respond as you think {self.name} would.
 
-            Additionally the Dungeon Master has given you the following information that they deem important to your 
-            conversation with {player.name}:
+            Additionally the Dungeon Master has given you information that may be important to the conversation. However only 
+            use this information if you think it is relevant to the conversation.
+
+            Dungeon Master Information:
             {info}
 
 
@@ -103,11 +104,10 @@ class NPC:
             conversation_history.append(f"{player.name}: {dialogue}")
             conversation_history.append(f"{self.name}: {response}")
 
-        rate, summary = self.updateMemory(player, conversation_history, dm)
+        self.updateMemory(player, conversation_history, dm)
 
-        return rate, summary
 
-    def updateMemory(self, player, conversation, dm) -> None:
+    def updateMemory(self, player, conversation, dm) -> Tuple[str, str]:
         """Updates the agent's memory with the player's name and the conversation history."""
 
         prompt = f"""
@@ -120,9 +120,9 @@ class NPC:
         Conversation History:
         {conversation}
         """
-        response = generate(prompt)
-        rate = response.split("[rate]")[1].split("[/rate]")[0]
-        summary = response.split("[summary]")[1].split("[/summary]")[0]
+        response: str = generate(prompt)
+        rate: str = response.split("[rate]")[1].split("[/rate]")[0]
+        summary: str = response.split("[summary]")[1].split("[/summary]")[0]
 
         print(f"Rate: {rate}")
         print(f"Summary: {summary}")

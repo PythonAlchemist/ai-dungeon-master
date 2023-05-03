@@ -44,6 +44,7 @@ class DM:
         self.type: str = "DM"
         self.session_history: list[str] = []
         self.memory: list[Tuple[int, str]] = []
+        self.feedback: list[str] = []
 
     def __repr__(self):
         return f"{self.type}({self.name})"
@@ -72,7 +73,8 @@ class DM:
         to have fun. You will be playing the role of the Dungeon Master and will be responsible for narrating the story and describing the environment outside of direct dialogue. 
         Below I will provide you with context about the primary quest line and the NPCs important to this quest. 
         Your primary task is narration, keep your answers short unless you are describing the environment or a character, then 
-        you can be as descriptive as you want. Each response should be of a single thought or idea and not a sequence of thoughts or events
+        you can be as descriptive as you want. Each response should be of a single thought or idea and not a sequence of thoughts or events. 
+        Remember to ONLY respond as the DM and not as the players.
 
         Main Quest Description: {self.quest['main_quest']}
         Quest Intro: {self.quest['intro']}
@@ -90,12 +92,23 @@ class DM:
         1. Speak for the players
         2. Make decisions for the players
 
+        If you are not performing your responsibilities correctly, the user the provide feedback to you. 
+        Do your best to follow the feedback and improve your performance moving forward.
+
+        Feedback: {self.feedback}
+
+        To help you here is your memory of the simulation so far in a compressed form from 
+        the original text. This should help you remember important details about the campaign.
+
         Long Term Memory: {self.memory}
 
         If there is no session history open the session as a Dungeon Master would. 
         If there is session history, continue the session as a Dungeon Master would.
 
+        Below is the session history so far:
         Session History: {self.session_history}
+
+        Responsd to the player as the Dungeon Master would.
         """
 
         response = generate(prompt, max_tokens=150)
@@ -107,49 +120,36 @@ class DM:
 
         return response
 
-    def updateMemory(self, conversation) -> None:
+    def updateFeedback(self, instructions: str) -> None:
+        """Gives the DM feedback on their performance."""
+        self.feedback.append(instructions)
+
+    def updateMemory(self) -> None:
         """Extracts the value of the conversation and adds it to the agent's memory."""
 
         prompt = f"""
         Task: Summarize and compress this conversation as small as possible. Only retain what will have value to the DM later.
         
         Conversation History:
-        {conversation}
+        {self.session_history}
         """
         response = generate(prompt)
         print(response)
 
         self.memory.append(response)
 
-    # TODO: This does not work as expected.
-    def informNPC(self, npc, player, location) -> Tuple[str, str]:
-        """Informs the NPC of the quest details."""
+        # reset the session history
+    
+    def getMemory(self) -> str:
+        """Returns the agent's memory."""
 
-        prompt = f"""
-        Task: A NPC named {npc.name} is in a conversation with a player named {player.name} at {location}. 
-        You need to inform the NPC about anything that is relevant to a quest or plot that {npc.name} would know. 
-        If they are not important to the quest or plot, then you do not need to inform them and respond with "None".
-        If you have initiated dialogue in character of {npc.name} then response with that dialogue.
-
-        Your response should be formatted as follows:
-        [info] Anything you want the NPC to know OR None [/info]
-        [dialogue] Anything the NPC has already said OR None [/dialogue]
-
-        To help you here is your memory of the simulation so far:
-
-        Long Term Memory: {self.memory}
+        info: str = f"""
+        Main Quest Description: {self.quest['main_quest']}
         Session History: {self.session_history}
         """
 
-        response = generate(prompt)
-        cprint(f"VOICE: {response}", "red")
+        return info
 
-        # split the response into the info and dialogue
-        info = response.split("[info]")[1].split("[/info]")[0]
-        dialogue = response.split("[dialogue]")[1].split("[/dialogue]")[0]
-
-        return info, dialogue
-    
     def updateSetting(self, simulation) -> None:
         """Updates the DM with the current setting of the simulation."""
         pass

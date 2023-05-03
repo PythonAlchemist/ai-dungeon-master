@@ -43,7 +43,7 @@ class Player:
         self.description: str = description
         self.location: Location = location
         self.CHARISMA: int = CHARISMA
-        self.actions: list[str] = ["chat", "ask"]
+        self.actions: list[str] = ["chat", "ask", "feedback"]
         self.memory: list[Tuple[int, str]] = []
 
     def __repr__(self):
@@ -64,7 +64,7 @@ class Player:
 
         return resp
 
-    def ask(self, simulation, conversation_history=[]):
+    def ask(self, simulation):
         """
         Ask an open ended question.
         """
@@ -91,3 +91,13 @@ class Player:
         npc_selected = npcs[answers]
 
         npc_selected.chat(self, dm)
+
+    def feedback(self, simulation):
+        """
+        Allows the player to provide feedback to the DM.
+        """
+        dm = simulation.dm
+        dialog = input("feedback>")
+        resp = dm.updateFeedback(self, dialog)
+        print(resp)
+        return resp
