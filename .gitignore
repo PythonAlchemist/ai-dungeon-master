@@ -4,8 +4,12 @@
 # Environment Variables
 *.env
 
+# VSCode
+.vscode/
+
 # pycache
 __pycache__/
 
 # conversation 
 conversation_history.txt
+data/

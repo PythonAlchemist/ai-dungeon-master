@@ -55,7 +55,6 @@ class NPC:
         self.personality = personality
         self.friendliness = friendliness
         self.memory = memory
-        self.plans = plans
 
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
@@ -64,7 +63,9 @@ class NPC:
         """Generates a chat session between the agent and the player."""
 
         conversation_history = []
-        dm_assit = dm.informNPC(self, player, self.location)
+        info, init_dialogue = dm.informNPC(self, player, self.location)
+        if init_dialogue:
+            conversation_history.append(f"{player.name}: {init_dialogue}")
 
         while True:
             dialogue = input(f"[chat:({self.name})]>")
@@ -78,7 +79,7 @@ class NPC:
 
             Additionally the Dungeon Master has given you the following information that they deem important to your 
             conversation with {player.name}:
-            {dm_assit}
+            {info}
 
 
             Your Personality:

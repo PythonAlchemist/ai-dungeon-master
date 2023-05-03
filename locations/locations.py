@@ -34,3 +34,12 @@ class Location:
         Minimum Occupants: {self.occupants}
         """
         return info
+
+
+small_town = Location(
+    name="Small Town",
+    type="Town",
+    description="A small town with a few shops and a tavern. Bob is the mayor and owner of the tavern.",
+    owner="Bob",
+    occupants=["John", "Mary", "Bob", "Sally"],
+)

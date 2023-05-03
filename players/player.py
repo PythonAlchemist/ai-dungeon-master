@@ -1,6 +1,10 @@
 from utils.text_generation import generate
 from termcolor import cprint
 import inquirer
+from enum import Enum
+from locations.locations import Location, small_town
+from typing import Tuple, TYPE_CHECKING
+
 
 
 class Player:
@@ -21,77 +25,69 @@ class Player:
     actions : list - A list of the character's possible actions.
     """
 
-    def __init__(self, name, race, sex, age, description, location, CHARISMA) -> None:
-        self.name = name
-        self.type = "PC"
-        self.race = race
-        self.sex = sex
-        self.age = age
-        self.description = description
-        self.location = location
-        self.CHARISMA = CHARISMA
-        self.actions = ["look", "chat", "ask", "yield", "move"]
-        self.memory = []
+    def __init__(
+        self,
+        name: str = "John",
+        race: str = "Human",
+        sex: str = "Male",
+        age: int = 35,
+        description: str = "",
+        location: Location = small_town,
+        CHARISMA: int = 12,
+    ) -> None:
+        self.name: str = name
+        self.type: str = "PC"
+        self.race: str = race
+        self.sex: str = sex
+        self.age: int = age
+        self.description: str = description
+        self.location: Location = location
+        self.CHARISMA: int = CHARISMA
+        self.actions: list[str] = ["chat", "ask"]
+        self.memory: list[Tuple[int, str]] = []
 
     def __repr__(self):
         return f"{self.type}({self.name}, {self.description}, {self.location})"
 
-    def executeAction(self, simulation, action):
+    def executeAction(self, simulation, action: str):
         """
         Executes the player's action.
         """
-        location = simulation.active_location
-        npcs = simulation.active_npc
-        dm = simulation.dm
 
-        if action == "look":
-            resp = self.look(location)
-        elif action == "chat":
-            resp = self.chat(npcs, dm)
+        if action == "chat":
+            resp = self.chat(simulation)
         elif action == "ask":
-            resp = self.ask(dm)
-        elif action == "yield":
-            resp = self.yieldAction(dm)
+            resp = self.ask(simulation)
         else:
+            resp = "Broken"
             print("Invalid action.")
 
         return resp
 
-    def ask(self, dm, conversation_history=[]):
+    def ask(self, simulation, conversation_history=[]):
         """
         Ask an open ended question.
         """
+
+        dm = simulation.dm
         dialog = input("ask>")
         resp = dm.rolePlay(self, dialog)
         return resp
 
-    def look(self, locations):
-        """
-        Prints the description of the current location.
-        """
-        for location in locations:
-            if location.name == self.location:
-                print(location.description)
-
-    def chat(self, npcs, dm):
+    def chat(self, simulation):
         """
         Prompts the player to choose a character to talk to.
         """
+        dm = simulation.dm
+        npcs = {npc.name: npc for npc in dm.npcs}
         questions = [
             inquirer.List(
                 "chat options",
                 message="Who would you like to chat with?",
-                choices=npcs,
+                choices=[npc.name for npc in dm.npcs],
             )
         ]
-        answers = inquirer.prompt(questions)["chat options"]
+        answers = inquirer.prompt(questions)["chat options"]  # type: ignore
         npc_selected = npcs[answers]
 
         npc_selected.chat(self, dm)
-
-    def yieldAction(self, dm):
-        """
-        Yields to the DM.
-        """
-        resp = dm.rolePlay(self, "")
-        return resp

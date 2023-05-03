@@ -2,6 +2,10 @@ from utils.text_generation import generate
 import os
 from termcolor import cprint
 import csv
+from typing import Tuple
+from agents.npc import NPC
+from players.player import Player
+from locations.locations import Location
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -25,16 +29,21 @@ class DM:
 
     """
 
-    def __init__(self, locations=None, npcs=None, players=None, quest=None) -> None:
-        self.name = "Dungeon Master"
-        self.type = "DM"
+    def __init__(
+        self,
+        locations: list[Location],
+        npcs: list[NPC],
+        players: list[Player],
+        quest: dict = {},
+    ) -> None:
         self.locations = locations
         self.npcs = npcs
         self.players = players
         self.quest = quest
-        self.session_history = []
-        self.memory = []
-        self.training_data = self.getWriter()
+        self.name: str = "Dungeon Master"
+        self.type: str = "DM"
+        self.session_history: list[str] = []
+        self.memory: list[Tuple[int, str]] = []
 
     def __repr__(self):
         return f"{self.type}({self.name})"
@@ -60,39 +69,39 @@ class DM:
 
         prompt = f"""
         Task: You are playing the role of the Dungeon Master for a Dungeons and Dragons game. This will be short theater of the mind style game and the primary goal is for the players 
-        to have fun. You will be playing the role of the Dungeon Master and will be responsible for narrating the story and describing the environment outside of direct dialogue. Try to 
-        model your performance after Matt Mercer, DM for Critical Role. Below I will provide you with context about the primary quest line and the characters you will be interacting with. 
-        Your primary task is narration, you should not be creating multi response dialogue between NPCs or Players.
+        to have fun. You will be playing the role of the Dungeon Master and will be responsible for narrating the story and describing the environment outside of direct dialogue. 
+        Below I will provide you with context about the primary quest line and the NPCs important to this quest. 
+        Your primary task is narration, keep your answers short unless you are describing the environment or a character, then 
+        you can be as descriptive as you want. Each response should be of a single thought or idea and not a sequence of thoughts or events
 
         Main Quest Description: {self.quest['main_quest']}
         Quest Intro: {self.quest['intro']}
 
-        Players: {[p for p in self.players]}
-        NPCs: {[p for p in self.npcs]}
-        Locations: {[p for p in self.locations]}
+        NPCs: {[p.name for p in self.npcs]}
+        Locations: {[p.name for p in self.locations]}
+
+        Current Location: {player.location}
 
         Your Responsibilities:
-        - Keep the players and NPCs on track of the primary plot line
-        - Narrate the story and describe the environment outside of direct dialogue
-        - Interact with tools within the simulation to help you accomplish your goals
+        1. Keep the players and NPCs on track of the primary plot line
+        2. Narrate the story and describe the environment outside of direct dialogue
 
         UNDER NO CIRCUMSTANCES SHOULD YOU DO THE FOLLOWING OR THE SIMULATION WILL TERMINATE:
-        - Speak for the players
-        - Make decisions for the players
+        1. Speak for the players
+        2. Make decisions for the players
 
         Long Term Memory: {self.memory}
 
-        With this information in mind, Keep answers short unless you are describing the environment or 
-        being long winded for artistic effect. If there is no session history open the session as a 
-        Dungeon Master would. If there is session history, continue the session as a Dungeon Master would.
+        If there is no session history open the session as a Dungeon Master would. 
+        If there is session history, continue the session as a Dungeon Master would.
 
         Session History: {self.session_history}
         """
 
         response = generate(prompt, max_tokens=150)
 
-        self.session_history.append(f"{player}: {text}")
-        self.session_history.append(f"DM: {response}")
+        self.session_history.append(text)
+        self.session_history.append(response)
 
         cprint(response, "green")
 
@@ -113,12 +122,18 @@ class DM:
         self.memory.append(response)
 
     # TODO: This does not work as expected.
-    def informNPC(self, npc, player, location) -> str:
+    def informNPC(self, npc, player, location) -> Tuple[str, str]:
         """Informs the NPC of the quest details."""
 
         prompt = f"""
-        Task: A NPC ({npc.name}) is in a conversation with a player ({player.name}) at {location}. You need to inform the NPC about anything 
-        that is relevant to a quest or plot that {npc.name} would know.
+        Task: A NPC named {npc.name} is in a conversation with a player named {player.name} at {location}. 
+        You need to inform the NPC about anything that is relevant to a quest or plot that {npc.name} would know. 
+        If they are not important to the quest or plot, then you do not need to inform them and respond with "None".
+        If you have initiated dialogue in character of {npc.name} then response with that dialogue.
+
+        Your response should be formatted as follows:
+        [info] Anything you want the NPC to know OR None [/info]
+        [dialogue] Anything the NPC has already said OR None [/dialogue]
 
         To help you here is your memory of the simulation so far:
 
@@ -129,4 +144,14 @@ class DM:
         response = generate(prompt)
         cprint(f"VOICE: {response}", "red")
 
-        return response
+        # split the response into the info and dialogue
+        info = response.split("[info]")[1].split("[/info]")[0]
+        dialogue = response.split("[dialogue]")[1].split("[/dialogue]")[0]
+
+        return info, dialogue
+    
+    def updateSetting(self, simulation) -> None:
+        """Updates the DM with the current setting of the simulation."""
+        pass
+
+
